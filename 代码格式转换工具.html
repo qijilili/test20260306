@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hive / ClickHouse / 达芬奇 代码格式转换工具</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&display=swap');
+        * { box-sizing: border-box; }
+        :root {
+            --bg: #0f1419;
+            --card: #1a2332;
+            --accent: #3b82f6;
+            --accent-dim: #60a5fa;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+        body {
+            font-family: 'Noto Sans SC', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            background: linear-gradient(135deg, var(--accent-dim), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            color: var(--accent-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card h2::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .row { grid-template-columns: 1fr; }
+        }
+        .arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 48px;
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+        @media (max-width: 900px) {
+            .arrow { padding: 12px 0; transform: rotate(90deg); }
+        }
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .select-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .select-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .select-group label {
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+        select {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card);
+            color: var(--text);
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 140px;
+        }
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        textarea {
+            width: 100%;
+            min-height: 280px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #0f1419;
+            color: var(--text);
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        textarea::placeholder {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text);
+        }
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .rules {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            line-height: 1.7;
+        }
+        .rules h3 {
+            margin: 0 0 10px 0;
+            color: var(--accent-dim);
+            font-size: 0.9rem;
+        }
+        .rules ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .rules li { margin-bottom: 4px; }
+        code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hive / ClickHouse / 达芬奇 代码格式转换</h1>
+        <p class="subtitle">支持三种平台 SQL 代码互相转换，基于常用语法规则进行智能替换</p>
+
+        <div class="card">
+            <h2>大模型配置（Hive↔CK 转换必填）</h2>
+            <div class="select-row" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                <div>
+                    <label>快速选择（免本地安装）</label>
+                    <select id="apiPreset" onchange="applyPreset()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;">
+                        <option value="">-- 手动填写下方 --</option>
+                        <option value="groq">Groq（免费额度，速度快）</option>
+                        <option value="google">Google AI Studio（免费）</option>
+                        <option value="deepseek" selected>DeepSeek（低价/免费）</option>
+                        <option value="dashscope">通义千问 DashScope（免费试用）</option>
+                        <option value="ollama">本地 Ollama（完全免费，需安装）</option>
+                    </select>
+                </div>
+                <div>
+                    <label>API 地址</label>
+                    <input type="text" id="apiUrl" placeholder="选择上方预设或手动填写" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);">
+                </div>
+                <div>
+                    <label>API Key（本地 Ollama 可留空）</label>
+                    <input type="password" id="apiKey" placeholder="从对应平台获取，免费注册即可" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);">
+                </div>
+                <div>
+                    <label>模型名称</label>
+                    <input type="text" id="modelName" placeholder="如: llama-3.1-8b-instant 或 qwen2.5:7b" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);">
+                </div>
+            </div>
+            <p class="hint">Hive 与 CK 互转需调用大模型；达芬奇转换仅对变量做规则处理。通义千问若报 403，请用<strong>主账号</strong>在 <a href="https://dashscope.console.aliyun.com/" target="_blank">DashScope 控制台</a> 创建 API Key，并确保已开通灵积模型服务。</p>
+            <p class="hint" style="color:var(--warning);">若从本地文件打开出现 CORS 报错：在终端执行 <code>cd "/Users/smzdm/Desktop/sql 代码"</code> 进入目录，再执行 <code>python3 -m http.server 8080</code>，然后浏览器访问 <a href="http://localhost:8080/代码格式转换工具.html" target="_blank">http://localhost:8080/代码格式转换工具.html</a></p>
+        </div>
+
+        <div class="card">
+            <h2>转换配置</h2>
+            <div class="select-row">
+                <div class="select-group">
+                    <label>源格式：</label>
+                    <select id="sourceFormat">
+                        <option value="hive">Hive</option>
+                        <option value="ck">ClickHouse (CK)</option>
+                        <option value="davinci">达芬奇平台</option>
+                    </select>
+                </div>
+                <span style="color: var(--text-muted);">→</span>
+                <div class="select-group">
+                    <label>目标格式：</label>
+                    <select id="targetFormat">
+                        <option value="hive">Hive</option>
+                        <option value="ck">ClickHouse (CK)</option>
+                        <option value="davinci">达芬奇平台</option>
+                    </select>
+                </div>
+            </div>
+            <div id="filterFieldsWrap" style="margin-top: 16px; display: none;">
+                <label>转为达芬奇时需配置的变量</label>
+                <p class="hint" style="margin-bottom: 12px;">时间字段（dt、statis_date、order_create_date 等）会自动转为 $begin_date$ / $end_date$；<strong>除时间外</strong>，请填写需要作为筛选项变量的字段：</p>
+                <input type="text" id="filterFields" placeholder="如: mall_name, type, cate1_name（逗号分隔，多个字段）" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);">
+                <p class="hint">这些字段将被转为 $if(字段名)$ and 字段名 in($字段名$) $endif$ 格式</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>输入代码</h2>
+            <label>粘贴需要转换的 SQL 代码</label>
+            <textarea id="inputCode" placeholder="在此粘贴 Hive、ClickHouse 或达芬奇平台的 SQL 代码..."></textarea>
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="convert()">转换</button>
+                <button class="btn btn-secondary" onclick="copyOutput()">复制结果</button>
+                <button class="btn btn-secondary" onclick="clearAll()">清空</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>转换结果</h2>
+            <label>转换后的代码</label>
+            <textarea id="outputCode" placeholder="转换结果将显示在这里..." readonly></textarea>
+        </div>
+
+        <div class="rules">
+            <h3>转换规则说明</h3>
+            <ul>
+                <li><strong>Hive ↔ CK：</strong> 调用大模型转换（函数差异大，无法枚举）。库名/表名：Hive→CK 时库改 bi_app、表名去 hive 且前缀改 ads_zdm；CK→Hive 时库改 dwd_zdm、表名加 hive 且 ads_zdm 改 dwd_zdm</li>
+                <li><strong>Hive → 达芬奇：</strong> 先经大模型转为 CK，再应用库表名规则与达芬奇变量规则（时间自动处理，筛选项需填写字段名）</li>
+                <li><strong>CK → 达芬奇：</strong> 仅规则处理。时间条件自动转为 $begin_date$ / $end_date$（月格式用 substr）；筛选项需在上方填写字段名，转为 $if(字段名)$ and 字段名 in($字段名$) $endif$</li>
+                <li><strong>达芬奇 → Hive/CK：</strong> 变量替换为占位符后，若转 Hive 则再调大模型，并应用库表名规则（库改 dwd_zdm、表名加 hive）</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const SOURCE = { HIVE: 'hive', CK: 'ck', DAVINCI: 'davinci' };
+        const TARGET = { HIVE: 'hive', CK: 'ck', DAVINCI: 'davinci' };
+
+        const API_PRESETS = {
+            groq: { url: 'https://api.groq.com/openai/v1', model: 'llama-3.1-8b-instant', keyHint: 'console.groq.com 免费注册' },
+            google: { url: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.0-flash', keyHint: 'aistudio.google.com 免费获取' },
+            deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat', keyHint: 'platform.deepseek.com 注册' },
+            dashscope: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-flash', keyHint: '阿里云 DashScope 控制台（需主账号 Key）' },
+            ollama: { url: 'http://localhost:11434/v1', model: 'qwen2.5:7b', keyHint: '无需 Key，需先安装 Ollama' }
+        };
+
+        function applyPreset() {
+            const v = document.getElementById('apiPreset').value;
+            if (!v || !API_PRESETS[v]) return;
+            const p = API_PRESETS[v];
+            document.getElementById('apiUrl').value = p.url;
+            document.getElementById('modelName').value = p.model;
+            document.getElementById('apiKey').placeholder = p.keyHint;
+            if (v === 'ollama') document.getElementById('apiKey').value = '';
+        }
+
+        // 禁止源格式与目标格式相同
+        document.getElementById('sourceFormat').addEventListener('change', () => { syncTarget(); toggleFilterFields(); });
+        document.getElementById('targetFormat').addEventListener('change', () => { syncSource(); toggleFilterFields(); });
+        function toggleFilterFields() {
+            const show = document.getElementById('targetFormat').value === 'davinci';
+            document.getElementById('filterFieldsWrap').style.display = show ? 'block' : 'none';
+        }
+        function syncTarget() {
+            const src = document.getElementById('sourceFormat').value;
+            const tgt = document.getElementById('targetFormat');
+            if (src === tgt.value) {
+                const opts = ['hive','ck','davinci'].filter(x => x !== src);
+                tgt.value = opts[0];
+            }
+        }
+        function syncSource() {
+            const tgt = document.getElementById('targetFormat').value;
+            const src = document.getElementById('sourceFormat');
+            if (tgt === src.value) {
+                const opts = ['hive','ck','davinci'].filter(x => x !== tgt);
+                src.value = opts[0];
+            }
+        }
+
+        async function convert() {
+            const input = document.getElementById('inputCode').value.trim();
+            const sourceFormat = document.getElementById('sourceFormat').value;
+            const targetFormat = document.getElementById('targetFormat').value;
+
+            if (!input) {
+                document.getElementById('outputCode').value = '请先输入需要转换的代码';
+                return;
+            }
+
+            if (sourceFormat === targetFormat) {
+                document.getElementById('outputCode').value = '源格式与目标格式相同，无需转换';
+                return;
+            }
+
+            const needLLM = (sourceFormat === 'hive' && targetFormat === 'ck') ||
+                           (sourceFormat === 'ck' && targetFormat === 'hive') ||
+                           (sourceFormat === 'hive' && targetFormat === 'davinci') ||
+                           (sourceFormat === 'davinci' && targetFormat === 'hive');
+
+            if (needLLM) {
+                const apiUrl = document.getElementById('apiUrl').value.trim();
+                const apiKey = document.getElementById('apiKey').value.trim();
+                const modelName = document.getElementById('modelName').value.trim() || 'qwen2.5:7b';
+                if (!apiUrl) {
+                    document.getElementById('outputCode').value = 'Hive↔CK 转换需调用大模型，请先配置 API 地址';
+                    return;
+                }
+                if (!apiKey && !apiUrl.includes('localhost')) {
+                    document.getElementById('outputCode').value = '请配置 API Key（本地 Ollama 可留空）';
+                    return;
+                }
+            }
+
+            document.getElementById('outputCode').value = '转换中...';
+            const btn = document.querySelector('.btn-primary');
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '转换中...';
+
+            try {
+                let result = input;
+
+                if (sourceFormat === SOURCE.HIVE && targetFormat === TARGET.CK) {
+                    result = await callLLM(input, 'hive', 'ck');
+                    result = hiveToCkTableRules(result);
+                } else if (sourceFormat === SOURCE.HIVE && targetFormat === TARGET.DAVINCI) {
+                    result = await callLLM(input, 'hive', 'ck');
+                    result = hiveToCkTableRules(result);
+                    result = ckToDavinciRules(result);
+                } else if (sourceFormat === SOURCE.CK && targetFormat === TARGET.HIVE) {
+                    result = await callLLM(input, 'ck', 'hive');
+                    result = fixHiveCkFunctions(result);
+                    result = ckToHiveTableRules(result);
+                } else if (sourceFormat === SOURCE.CK && targetFormat === TARGET.DAVINCI) {
+                    result = hiveToCkTableRules(input);
+                    result = ckToDavinciRules(result);
+                } else if (sourceFormat === SOURCE.DAVINCI && targetFormat === TARGET.HIVE) {
+                    result = davinciReplaceVars(input);
+                    result = await callLLM(result, 'ck', 'hive');
+                    result = fixHiveCkFunctions(result);
+                    result = ckToHiveTableRules(result);
+                } else if (sourceFormat === SOURCE.DAVINCI && targetFormat === TARGET.CK) {
+                    result = davinciReplaceVars(input);
+                }
+
+                document.getElementById('outputCode').value = result;
+            } catch (e) {
+                document.getElementById('outputCode').value = '转换失败：' + (e.message || String(e));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        }
+
+        async function callLLM(sql, fromFormat, toFormat) {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const modelName = document.getElementById('modelName').value.trim() || 'qwen2.5:7b';
+
+            const fromName = fromFormat === 'hive' ? 'Hive' : 'ClickHouse';
+            const toName = toFormat === 'hive' ? 'Hive' : 'ClickHouse';
+            const prompt = `你是一位 SQL 语法专家，专门负责 Hive 与 ClickHouse(CK) 之间的 SQL 转换。转换结果必须语义等价，保证查询结果一致。
+
+【重要】Hive 与 CK 的函数体系差异很大，转换时必须做正确的等价替换，不能直接照搬。
+
+【数组索引】CK 数组是 1-based（arr[1]=首个元素），Hive 是 0-based（arr[0]=首个元素）。转换时：CK arr[n] 对应 Hive arr[n-1]。例如 CK 的 [2] 取第2个元素，Hive 应用 [1]。
+
+【常用函数映射】
+CK→Hive：JSONExtract(json,'Array(String)')[n] → get_json_object(json,'$[n-1]')；splitByChar(',',str)[n] → split(str,',')[n-1]；match(col,'x') → col like '%x%'；parse_datetime → from_unixtime(unix_timestamp(...))。
+Hive→CK：get_json_object → JSONExtract；split(str,',')[n] → splitByChar(',',str)[n+1]；like '%x%' → match(col,'x')。
+
+${toFormat === 'hive' ? '【转 Hive】严禁使用 parse_datetime、parseDateTimeBestEffort、toDateTime、JSONExtract、splitByChar、match 等 CK 函数。必须用 Hive 的 get_json_object、split、like/rlike、unix_timestamp、from_unixtime、to_date。' : '【转 CK】必须用 CK 的 JSONExtract、splitByChar、match 等，注意数组索引改为 1-based。'}
+
+【GROUP BY】保持 group by 1,2 或改为显式列名，确保与 SELECT 顺序一致。
+
+请将以下 ${fromName} SQL 完整转换为 ${toName} SQL 格式，只输出转换后的 SQL，不要解释、不要 markdown 代码块。
+
+输入 SQL：
+\`\`\`
+${sql}
+\`\`\`
+
+输出 ${toName} SQL：`;
+
+            const body = {
+                model: modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
+            };
+
+            const headers = { 'Content-Type': 'application/json' };
+            const isGoogle = apiUrl.includes('generativelanguage.googleapis.com');
+            if (apiKey && !isGoogle) headers['Authorization'] = 'Bearer ' + apiKey;
+
+            let url = apiUrl.replace(/\/$/, '') + '/chat/completions';
+            if (isGoogle && apiKey) url += (url.includes('?') ? '&' : '?') + 'key=' + encodeURIComponent(apiKey);
+            const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const msg = data?.error?.message || res.statusText;
+                throw new Error('API 请求失败：' + res.status + ' ' + (msg || res.statusText));
+            }
+
+            let text = data.choices?.[0]?.message?.content || data.response || '';
+            text = text.replace(/^```\w*\n?|```$/g, '').trim();
+            return text;
+        }
+
+        // CK → 达芬奇：时间变量 + 筛选项变量
+        function ckToDavinciRules(sql) {
+            let s = sql;
+            // 1. 时间字段限制条件 → between $begin_date$ and $end_date$
+            // 1a. between '...' and '...' 格式
+            s = s.replace(/\b(dt|statis_date|order_create_date|date)\s+between\s+'([^']+)'\s+and\s+'([^']+)'/gi,
+                (m, field, d1, d2) => {
+                    if (d1.length <= 7) {
+                        return field + " between substr($begin_date$,1,7) and substr($end_date$,1,7)";
+                    }
+                    return field + " between $begin_date$ and $end_date$";
+                });
+            s = s.replace(/\b(\w+)\s+between\s+'(\d{4}-\d{2}-\d{2})'\s+and\s+'(\d{4}-\d{2}-\d{2})'/gi,
+                "$1 between $begin_date$ and $end_date$");
+            s = s.replace(/\b(\w+)\s+between\s+'(\d{4}-\d{2})'\s+and\s+'(\d{4}-\d{2})'/gi,
+                "$1 between substr($begin_date$,1,7) and substr($end_date$,1,7)");
+            // 1b. >= '...' AND <= '...' 格式（LLM 常输出此格式）
+            s = s.replace(/\b(dt|statis_date|order_create_date|date)\s+>=\s*'(\d{4}-\d{2})'\s+AND\s+\1\s+<=\s*'(\d{4}-\d{2})'/gi,
+                (m, field, d1, d2) => field + " between substr($begin_date$,1,7) and substr($end_date$,1,7)");
+            s = s.replace(/\b(dt|statis_date|order_create_date|date)\s+>=\s*'(\d{4}-\d{2}-\d{2})'\s+AND\s+\1\s+<=\s*'(\d{4}-\d{2}-\d{2})'/gi,
+                (m, field) => field + " between $begin_date$ and $end_date$");
+            s = s.replace(/\b(\w+)\s+>=\s*'(\d{4}-\d{2})'\s+AND\s+\1\s+<=\s*'(\d{4}-\d{2})'/gi,
+                "$1 between substr($begin_date$,1,7) and substr($end_date$,1,7)");
+            s = s.replace(/\b(\w+)\s+>=\s*'(\d{4}-\d{2}-\d{2})'\s+AND\s+\1\s+<=\s*'(\d{4}-\d{2}-\d{2})'/gi,
+                "$1 between $begin_date$ and $end_date$");
+
+            // 2. 筛选项：替换已有的 in(...) 或 ='...'，或新增变量（字段在 SELECT/GROUP BY 中但 WHERE 无筛选时）
+            const filterStr = document.getElementById('filterFields').value.trim();
+            if (filterStr) {
+                const fields = filterStr.split(/[,，\s]+/).map(f => f.trim()).filter(Boolean);
+                for (const field of fields) {
+                    const escaped = field.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const colPat = new RegExp(`and\\s+((?:\\w+\\.)?\\b${escaped}\\b)\\s+in\\s*\\([^)]+\\)`, 'gi');
+                    s = s.replace(colPat, (m) => {
+                        const col = m.replace(/^and\s+/, '').replace(/\s+in\s*\([^)]+\)$/, '');
+                        return `$if(${field})$ and ${col} in($${field}$$) $endif$`;
+                    });
+                    const eqPat = new RegExp(`and\\s+((?:\\w+\\.)?\\b${escaped}\\b)\\s*=\\s*'[^']*'`, 'gi');
+                    s = s.replace(eqPat, (m) => {
+                        const col = m.replace(/^and\s+/, '').replace(/\s*=\s*'[^']*'$/, '');
+                        return `$if(${field})$ and ${col} in($${field}$$) $endif$`;
+                    });
+                }
+                // 2b. 配置了但未替换的字段：在 WHERE 末尾、GROUP BY 前追加变量
+                const toAdd = fields.filter(f => !s.includes(`$if(${f})$`));
+                if (toAdd.length > 0) {
+                    const addBlock = toAdd.map(f => `$if(${f})$ and ${f} in($${f}$$) $endif$`).join('\n    ');
+                    s = s.replace(/(\bWHERE\b[\s\S]*?)(\bGROUP\s+BY\b)/gi, (m, wherePart, groupBy) =>
+                        wherePart.trimEnd() + '\n    ' + addBlock + '\n' + groupBy);
+                }
+            }
+            return s;
+        }
+
+        // Hive → CK/达芬奇：库名改 bi_app，表名去 hive 且 hive 前改 ads_zdm
+        function hiveToCkTableRules(sql) {
+            let s = sql;
+            s = s.replace(/(\w+)_hive_/g, 'ads_zdm_');
+            s = s.replace(/\b(dwd_zdm|ods_zdm|ads_zdm)\./g, 'bi_app.');
+            return s;
+        }
+
+        // CK/达芬奇 → Hive：库名统一 dwd_zdm，表名加 hive 且 ads_zdm 改 dwd_zdm
+        function ckToHiveTableRules(sql) {
+            let s = sql;
+            s = s.replace(/\bbi_app\./g, 'dwd_zdm.');
+            s = s.replace(/ads_zdm_/g, 'dwd_zdm_hive_');
+            return s;
+        }
+
+        // 达芬奇 → CK/Hive：替换所有变量为占位符（时间变量用近2天日期）
+        function davinciReplaceVars(sql) {
+            const now = new Date();
+            const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const beginDate = new Date(endDate);
+            beginDate.setDate(beginDate.getDate() - 2);
+            const fmt = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            const fmtYm = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const fmtYmd = (d) => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+            const bd = "'" + fmt(beginDate) + "'", ed = "'" + fmt(endDate) + "'";
+            const bdYm = "'" + fmtYm(beginDate) + "'", edYm = "'" + fmtYm(endDate) + "'";
+            const bdYmd = "'" + fmtYmd(beginDate) + "'", edYmd = "'" + fmtYmd(endDate) + "'";
+            let s = sql;
+            // 1. 时间变量：substr 格式（月 YYYY-MM）
+            s = s.replace(/\bsubstr\s*\(\s*\$\{begin_date\}\s*,\s*1\s*,\s*7\s*\)/gi, bdYm);
+            s = s.replace(/\bsubstr\s*\(\s*\$\{end_date\}\s*,\s*1\s*,\s*7\s*\)/gi, edYm);
+            s = s.replace(/\bsubstr\s*\(\s*\$begin_date\$\s*,\s*1\s*,\s*7\s*\)/gi, bdYm);
+            s = s.replace(/\bsubstr\s*\(\s*\$end_date\$\s*,\s*1\s*,\s*7\s*\)/gi, edYm);
+            s = s.replace(/\bsubstr\s*\(\s*\$\{begin_date\}\s*,\s*1\s*,\s*6\s*\)/gi, bdYmd);
+            s = s.replace(/\bsubstr\s*\(\s*\$\{end_date\}\s*,\s*1\s*,\s*6\s*\)/gi, edYmd);
+            // 2. 时间变量：裸变量
+            s = s.replace(/\$\{begin_date\}/g, bd);
+            s = s.replace(/\$\{end_date\}/g, ed);
+            s = s.replace(/\$begin_date\$/g, bd);
+            s = s.replace(/\$end_date\$/g, ed);
+            // 3. 筛选项：${if(字段) and 字段 in (${字段}) ${endif}}
+            s = s.replace(/\$\{if\s*\(\s*(\w+)\s*\)[\s\S]*?and\s+[\w.]+\s+in\s*\(\s*\$\{\1\}\s*\)[\s\S]*?\$\{endif\}\}?\s*/gi,
+                (_, f) => `and ${f} in ('placeholder')`);
+            // 4. 筛选项：$if(字段)$ and 字段 in($字段$) $endif$ 或 in($字段$$)
+            s = s.replace(/\$if\s*\(\s*(\w+)\s*\)\s*\$[\s\S]*?and\s+[\w.]+\s+in\s*\(\s*\$(\w+)\$+\s*\)[\s\S]*?\$endif\s*\$?/gi,
+                (_, f) => `and ${f} in ('placeholder')`);
+            // 5. 兜底：任意 $if(字段)$ ... $endif$ 块
+            s = s.replace(/\$if\s*\(\s*(\w+)\s*\)\s*\$[\s\S]*?\$endif\s*\$?/gi,
+                (_, f) => `and ${f} in ('placeholder')`);
+            // 6. 兜底：所有 $字段名$ 或 ${字段名} 格式的变量 → 'placeholder'（排除 $if、$endif、begin_date、end_date 已处理）
+            s = s.replace(/\$\{(?!if\s|endif)(\w+)\}/g, "'placeholder'");
+            s = s.replace(/\$(?!if\s*\(|endif)(\w+)\$+/g, "'placeholder'");
+            return s;
+        }
+
+        // Hive 输出后处理：将 CK 特有函数替换为 Hive 等价
+        function fixHiveCkFunctions(sql) {
+            let s = sql;
+            s = s.replace(/\bparse_datetime\s*\(\s*([^,]+)\s*,\s*'%Y-%m-%d\s+%H:%i:%s'\s*\)/gi,
+                "from_unixtime(unix_timestamp($1, 'yyyy-MM-dd HH:mm:ss'))");
+            s = s.replace(/\bparse_datetime\s*\(\s*([^,]+)\s*,\s*'%Y-%m-%d'\s*\)/gi,
+                "to_date($1)");
+            s = s.replace(/\bparse_datetime\s*\(\s*([^,]+)\s*,\s*'%Y-%m'\s*\)/gi,
+                "to_date(concat($1, '-01'))");
+            s = s.replace(/\bparseDateTimeBestEffort\s*\(\s*([^)]+)\s*\)/gi,
+                "from_unixtime(unix_timestamp($1))");
+            s = s.replace(/\bparse_datetime\s*\(\s*([^)]+)\s*\)/gi,
+                "from_unixtime(unix_timestamp($1))");
+            s = s.replace(/\btoDateTime\s*\(\s*([^)]+)\s*\)/gi,
+                "from_unixtime(unix_timestamp($1))");
+            return s;
+        }
+
+        function copyOutput() {
+            const out = document.getElementById('outputCode');
+            out.select();
+            document.execCommand('copy');
+            alert('已复制到剪贴板');
+        }
+
+        function clearAll() {
+            document.getElementById('inputCode').value = '';
+            document.getElementById('outputCode').value = '';
+        }
+
+        toggleFilterFields();
+        // 页面加载时应用 DeepSeek 预设
+        applyPreset();
+    </script>
+</body>
+</html>
